@@ -4,11 +4,11 @@
   "private": true,
   "description": "CI-driven Prisma migrations to a root Postgres and independent child Postgres endpoints",
   "scripts": {
-    "db:generate": "prisma generate",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:dev": "prisma migrate dev",
-    "db:validate": "prisma validate",
-    "db:format:check": "prisma format --check"
+    "db:generate": "node ./node_modules/prisma/build/index.js generate",
+    "db:migrate:deploy": "node ./node_modules/prisma/build/index.js migrate deploy",
+    "db:migrate:dev": "node ./node_modules/prisma/build/index.js migrate dev",
+    "db:validate": "node ./node_modules/prisma/build/index.js validate",
+    "db:format:check": "node ./node_modules/prisma/build/index.js format --check"
   },
   "engines": {
     "node": ">=20"
