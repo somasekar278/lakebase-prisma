@@ -27,10 +27,10 @@ jobs:
         with:
           node-version: "20"
           cache: npm
+          cache-dependency-path: package-lock.json
 
-      # Use `npm ci` once you commit package-lock.json (run `npm install` locally first).
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # Ensures schema.prisma parses and matches generator/datasource config.
       - name: Prisma validate
