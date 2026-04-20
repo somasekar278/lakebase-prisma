@@ -1,0 +1,44 @@
+// Single schema definition; the same migration history is replayed against
+// root and child databases via DATABASE_URL in each CI job.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  // Required for `migrate dev` on hosts where the role cannot CREATE DATABASE (e.g. Lakebase).
+  // Use an empty DB you created manually; ignored by `migrate deploy`.
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  bio       String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  projects  Project[]
+}
+
+model Project {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+/// Tracks which Prisma migration was applied on a given logical target (root vs branch DB).
+/// Populated by application or ops tooling; not used by Prisma itself.
+model SchemaMigrationAudit {
+  id            String   @id @default(cuid())
+  migrationName String
+  appliedAt     DateTime @default(now())
+  targetRole    String
+}

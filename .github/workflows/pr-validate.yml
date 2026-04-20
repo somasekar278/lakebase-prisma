@@ -1,0 +1,45 @@
+# Validate Prisma schema and migration history on every pull request.
+# Does not connect to production databases.
+
+name: PR — validate Prisma
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pr-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      # Satisfies datasource env vars; validate/generate do not connect to a real DB in this job.
+      DATABASE_URL: "postgresql://prisma:prisma@127.0.0.1:5432/placeholder"
+      SHADOW_DATABASE_URL: "postgresql://prisma:prisma@127.0.0.1:5432/shadow_placeholder"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      # Use `npm ci` once you commit package-lock.json (run `npm install` locally first).
+      - name: Install dependencies
+        run: npm install
+
+      # Ensures schema.prisma parses and matches generator/datasource config.
+      - name: Prisma validate
+        run: npm run db:validate
+
+      # Fails if schema would be reformatted — keeps style consistent in Git.
+      - name: Prisma format check
+        run: npm run db:format:check
+
+      # Confirms client can be generated from the current schema (no codegen errors).
+      - name: Prisma generate
+        run: npm run db:generate

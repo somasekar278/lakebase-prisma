@@ -1,0 +1,22 @@
+{
+  "name": "prisma-multi-db-migrations-starter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CI-driven Prisma migrations to a root Postgres and independent child Postgres endpoints",
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:validate": "prisma validate",
+    "db:format:check": "prisma format --check"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "prisma": "^6.7.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.7.0"
+  }
+}

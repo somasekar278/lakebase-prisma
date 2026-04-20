@@ -1,0 +1,92 @@
+# Deploy the same committed migration history to root first, then to each child.
+# Uses `prisma migrate deploy` (non-interactive; safe for CI).
+#
+# Each job sets DATABASE_URL to a different secret so Prisma replays identical
+# SQL from prisma/migrations/ against independent Postgres endpoints.
+#
+# migrate-child-1 and migrate-child-2 both `need: migrate-root` so root must pass
+# before either child runs (they may run in parallel with each other).
+
+name: Deploy — Prisma migrations (root then children)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-migrations-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Root must succeed before any child job runs.
+  # ---------------------------------------------------------------------------
+  migrate-root:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_ROOT }}
+      # Required because schema declares shadowDatabaseUrl; migrate deploy does not use it.
+      SHADOW_DATABASE_URL: ${{ secrets.DATABASE_URL_ROOT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Apply migrations (root)
+        run: npx prisma migrate deploy
+
+  migrate-child-1:
+    needs: migrate-root
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_CHILD_1 }}
+      SHADOW_DATABASE_URL: ${{ secrets.DATABASE_URL_CHILD_1 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Apply migrations (child 1)
+        run: npx prisma migrate deploy
+
+  migrate-child-2:
+    needs: migrate-root
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_CHILD_2 }}
+      SHADOW_DATABASE_URL: ${{ secrets.DATABASE_URL_CHILD_2 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Apply migrations (child 2)
+        run: npx prisma migrate deploy
