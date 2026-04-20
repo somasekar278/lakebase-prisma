@@ -46,8 +46,6 @@ jobs:
         run: npx prisma migrate deploy
 
   migrate-child-1:
-    # Toggle on after Lakebase child 1 DB + DATABASE_URL_CHILD_1 secret exist; remove next line.
-    if: false
     needs: migrate-root
     runs-on: ubuntu-latest
     environment: production
@@ -71,7 +69,6 @@ jobs:
         run: npx prisma migrate deploy
 
   migrate-child-2:
-    if: false
     needs: migrate-root
     runs-on: ubuntu-latest
     environment: production
