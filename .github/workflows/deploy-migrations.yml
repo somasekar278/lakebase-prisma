@@ -43,8 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Use npm script so we run project Prisma (v6). `npx prisma` can fetch Prisma 7+.
       - name: Apply migrations (root)
-        run: npx prisma migrate deploy
+        run: npm run db:migrate:deploy
 
   migrate-child-1:
     needs: migrate-root
@@ -68,7 +69,7 @@ jobs:
         run: npm ci
 
       - name: Apply migrations (child 1)
-        run: npx prisma migrate deploy
+        run: npm run db:migrate:deploy
 
   migrate-child-2:
     needs: migrate-root
@@ -92,4 +93,4 @@ jobs:
         run: npm ci
 
       - name: Apply migrations (child 2)
-        run: npx prisma migrate deploy
+        run: npm run db:migrate:deploy
