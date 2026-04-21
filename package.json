@@ -2,7 +2,7 @@
   "name": "prisma-multi-db-migrations-starter",
   "version": "1.0.0",
   "private": true,
-  "description": "CI-driven Prisma migrations to a root Postgres and independent child Postgres endpoints",
+  "description": "Prisma migrations to primary and optional child Postgres endpoints (apply locally)",
   "scripts": {
     "db:generate": "node ./node_modules/prisma/build/index.js generate",
     "db:migrate:deploy": "node ./node_modules/prisma/build/index.js migrate deploy",

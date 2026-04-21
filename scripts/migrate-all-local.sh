@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Mirrors CI deploy order: root → child 1 → child 2.
-# Export these in your shell (or paste URLs from GitHub secrets), then:
+# Export these in your shell (e.g. from .env via set -a && source .env), then:
 #   chmod +x scripts/migrate-all-local.sh
 #   ./scripts/migrate-all-local.sh
 
