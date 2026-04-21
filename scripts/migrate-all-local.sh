@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
-# Mirrors CI deploy order: root → child 1 → child 2.
-# Export these in your shell (e.g. from .env via set -a && source .env), then:
-#   chmod +x scripts/migrate-all-local.sh
-#   ./scripts/migrate-all-local.sh
+# Runs `prisma migrate deploy` three times in order: root → child 1 → child 2.
+#
+# Put connection strings in .env (same repo root as this script):
+#   DATABASE_URL_ROOT, DATABASE_URL_CHILD_1, DATABASE_URL_CHILD_2
+# Then:
+#   chmod +x scripts/migrate-all-local.sh && ./scripts/migrate-all-local.sh
 
 set -euo pipefail
-ROOT="${DATABASE_URL_ROOT:?Set DATABASE_URL_ROOT}"
-C1="${DATABASE_URL_CHILD_1:?Set DATABASE_URL_CHILD_1}"
-C2="${DATABASE_URL_CHILD_2:?Set DATABASE_URL_CHILD_2}"
-
 cd "$(dirname "$0")/.."
+
+if [[ -f .env ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
+fi
+
+ROOT="${DATABASE_URL_ROOT:?Add DATABASE_URL_ROOT to .env (primary branch)}"
+C1="${DATABASE_URL_CHILD_1:?Add DATABASE_URL_CHILD_1 to .env}"
+C2="${DATABASE_URL_CHILD_2:?Add DATABASE_URL_CHILD_2 to .env}"
 
 run() {
   local label="$1"

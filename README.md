@@ -29,7 +29,7 @@ Replaying the **same migration SQL** from Git onto each endpoint makes the contr
 │   └── workflows/
 │       └── pr-validate.yml         # optional: validate + format check (no DB)
 ├── scripts/
-│   └── migrate-all-local.sh        # root → child 1 → child 2 (export DATABASE_URL_* first)
+│   └── migrate-all-local.sh        # root → child 1 → child 2 (URLs in .env)
 ├── package.json
 ├── prisma/
 │   ├── schema.prisma
@@ -94,11 +94,14 @@ Replaying the **same migration SQL** from Git onto each endpoint makes the contr
    npm run db:migrate:deploy
    ```
 
-   For root + two children in one shot, set `DATABASE_URL_ROOT`, `DATABASE_URL_CHILD_1`, and `DATABASE_URL_CHILD_2` (see `.env.example`), then:
+   For **root + two children** in one shot, add these to **`.env`** (see `.env.example`): `DATABASE_URL_ROOT`, `DATABASE_URL_CHILD_1`, `DATABASE_URL_CHILD_2` — same migration SQL, different host per Lakebase branch. Then:
 
    ```bash
+   chmod +x scripts/migrate-all-local.sh
    ./scripts/migrate-all-local.sh
    ```
+
+   The script loads `.env` automatically and runs `migrate deploy` three times (Prisma itself only ever sees one `DATABASE_URL` at a time).
 
 Always use **`migrate deploy`** for applying committed migrations (non-interactive, idempotent). Use **`migrate dev`** only when authoring new migrations locally.
 
