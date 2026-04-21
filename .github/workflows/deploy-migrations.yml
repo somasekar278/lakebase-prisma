@@ -43,6 +43,29 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Remove this step after P1010 is fixed. Logs user/host/db and password length only (no password text).
+      - name: Debug DATABASE_URL shape (root only)
+        run: |
+          node <<'NODE'
+          const raw = process.env.DATABASE_URL ?? '';
+          const urlStr = raw.trim();
+          let u;
+          try {
+            u = new URL(urlStr.replace(/^postgresql:/i, 'postgres:'));
+          } catch (e) {
+            console.error('DATABASE_URL failed to parse as URL:', e.message);
+            process.exit(1);
+          }
+          console.log('scheme=', u.protocol);
+          console.log('user=', u.username);
+          console.log('host=', u.hostname);
+          console.log('port=', u.port || '5432');
+          console.log('database=', decodeURIComponent((u.pathname || '/').slice(1) || ''));
+          console.log('has_schema_public=', /[?&]schema=public\b/i.test(u.search));
+          console.log('has_sslmode_require=', /sslmode=require\b/i.test(u.search));
+          console.log('password_char_length=', (u.password || '').length);
+          NODE
+
       # Use npm script so we run project Prisma (v6). `npx prisma` can fetch Prisma 7+.
       - name: Apply migrations (root)
         run: npm run db:migrate:deploy
