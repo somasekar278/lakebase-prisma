@@ -43,32 +43,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Remove this step after P1010 is fixed. Logs user/host/db and password length only (no password text).
-      - name: Debug DATABASE_URL shape (root only)
-        run: |
-          node <<'NODE'
-          const raw = process.env.DATABASE_URL ?? '';
-          const urlStr = raw.trim();
-          let u;
-          try {
-            u = new URL(urlStr.replace(/^postgresql:/i, 'postgres:'));
-          } catch (e) {
-            console.error('DATABASE_URL failed to parse as URL:', e.message);
-            process.exit(1);
-          }
-          console.log('scheme=', u.protocol);
-          console.log('user=', u.username);
-          console.log('host=', u.hostname);
-          console.log('port=', u.port || '5432');
-          console.log('database=', decodeURIComponent((u.pathname || '/').slice(1) || ''));
-          console.log('has_schema_public=', /[?&]schema=public\b/i.test(u.search));
-          console.log('has_sslmode_require=', /sslmode=require\b/i.test(u.search));
-          console.log('password_char_length=', (u.password || '').length);
-          NODE
-
-      # libpq rejects ?schema= — strip it only for psql. Same host/user/pass/db/sslmode as Prisma.
-      # If this fails here with auth denied but works on laptop → IP/policy or secret mismatch; not Prisma-only.
-      - name: psql sanity (root only)
+      # Job env already sets DATABASE_URL from secrets.DATABASE_URL_ROOT (not secrets.DATABASE_URL).
+      # Redacts password; prints decoded password length; psql strips ?schema= (libpq rejects it).
+      - name: Diagnose URL + connectivity (root only)
         run: |
           sudo apt-get update -y
           sudo apt-get install -y postgresql-client python3
@@ -80,12 +57,21 @@ jobs:
               sys.exit(1)
           u = raw.replace("postgresql://", "postgres://", 1) if raw.lower().startswith("postgresql://") else raw
           p = up.urlparse(u)
+          user = up.unquote(p.username) or ""
+          pw = up.unquote(p.password) or ""
+          host = p.hostname or ""
+          port = p.port or "5432"
+          db = up.unquote((p.path or "/").lstrip("/") or "")
+          qs = ("?" + p.query) if p.query else ""
+          print("DATABASE_URL (redacted):", f"postgresql://{user}:***@{host}:{port}/{db}" + qs)
+          print("Password length (decoded):", len(pw))
+          print("--- psql (schema= stripped from query string for libpq) ---")
           q = [(k, v) for k, v in up.parse_qsl(p.query, keep_blank_values=True) if k.lower() != "schema"]
           newq = up.urlencode(q)
           clean = up.urlunparse((p.scheme, p.netloc, p.path, p.params, newq, p.fragment))
           clean = clean.replace("postgres://", "postgresql://", 1)
           r = subprocess.run(
-              ["psql", clean, "-v", "ON_ERROR_STOP=1", "-c", "select current_user as u, current_database() as db;"],
+              ["psql", clean, "-v", "ON_ERROR_STOP=1", "-c", "select current_user, current_database(), inet_server_addr();"],
               capture_output=True,
               text=True,
           )
